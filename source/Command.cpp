@@ -85,13 +85,44 @@ void Command::ReadKeyboard()
 	for(const auto &it : keycodeForCommand)
 		if(keyDown[SDL_GetScancodeFromKey(it.second)])
 			*this |= it.first;
+}
 
+
+// Read gamepad buttons and directional analog input.
+bool Command::ReadController()
+{
 	if (attachedController != nullptr)
+	{
 		for(const auto &it : buttonForCommand)
 			if (SDL_GameControllerGetButton(attachedController, it.second))
 				*this |= it.first;
+
+		xAxis = SDL_GameControllerGetAxis(attachedController, SDL_CONTROLLER_AXIS_LEFTX);
+		yAxis = SDL_GameControllerGetAxis(attachedController, SDL_CONTROLLER_AXIS_LEFTY);
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
+// Hardcoded to just the left stick for now.
+short Command::Axis(int axis) const
+{
+	switch (axis)
+	{
+		case SDL_CONTROLLER_AXIS_LEFTX:
+			return xAxis;
+
+		case SDL_CONTROLLER_AXIS_LEFTY:
+			return yAxis;
+
+		default:
+			return 0;
+	}
+}
 
 
 // Load or save the keyboard preferences.

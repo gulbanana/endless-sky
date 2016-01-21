@@ -57,6 +57,9 @@ public:
 	// Read the current keyboard state.
 	void ReadKeyboard();
 
+	// Read controller state and return whether axes were updated.
+	bool ReadController();
+
 	// Load or save the keyboard preferences.
 	static void LoadSettings(const std::string &path);
 	static void SaveSettings(const std::string &path);
@@ -77,6 +80,8 @@ public:
 	bool Has(Command command) const;
 	// Get the commands that are set in this and not in the given command.
 	Command AndNot(Command command) const;
+	// Get the axial value for a controller analog input.
+	short Axis(int) const;
 
 	// Get or set the turn amount.
 	void SetTurn(double amount);
@@ -104,6 +109,8 @@ private:
 private:
 	uint64_t state = 0;
 	double turn = 0.;
+	short xAxis = 0;
+	short yAxis = 0;
 };
 
 
