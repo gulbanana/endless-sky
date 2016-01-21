@@ -30,6 +30,9 @@ namespace {
 	map<int, Command> commandForKeycode;
 	map<Command, int> keycodeForCommand;
 	map<int, int> keycodeCount;
+	SDL_GameController* attachedController;
+	map<SDL_GameControllerButton, Command> commandForButton;
+	map<Command, SDL_GameControllerButton> buttonForCommand;
 }
 
 const Command Command::NONE(0, "");
@@ -82,6 +85,11 @@ void Command::ReadKeyboard()
 	for(const auto &it : keycodeForCommand)
 		if(keyDown[SDL_GetScancodeFromKey(it.second)])
 			*this |= it.first;
+
+	if (attachedController != nullptr)
+		for(const auto &it : buttonForCommand)
+			if (SDL_GameControllerGetButton(attachedController, it.second))
+				*this |= it.first;
 }
 
 
@@ -117,21 +125,36 @@ void Command::LoadSettings(const string &path)
 		++keycodeCount[it.second];
 	}
 
-    const auto hasController = SDL_NumJoysticks() > 0 && SDL_IsGameController(0);
-    if (hasController)
-    {
-        Files::LogError("yes controller");
+	// Hardcode controller mappings for now
+	buttonForCommand[Command::FORWARD] = SDL_CONTROLLER_BUTTON_RIGHTSHOULDER;
 
-        auto controller = SDL_GameControllerOpen(0);
-        auto mapping = SDL_GameControllerMapping(controller);
-        Files::LogError(mapping);
-    }
-    else
-    {
-        Files::LogError("no controller");
-    }
+	commandForButton.clear();
+	for(const auto &it : buttonForCommand)
+	{
+		commandForButton[it.second] = it.first;
+	}
 }
 
+
+// Initialise controllers if any are attached
+void Command::LoadGameControllers()
+{
+    for (int i = 0; i < SDL_NumJoysticks(); i++)
+    {
+        if (SDL_IsGameController(i))
+        {
+            Files::LogError("found controller @" + to_string(i));
+
+            attachedController = SDL_GameControllerOpen(0);
+
+            auto mapping = SDL_GameControllerMapping(attachedController);
+            Files::LogError(string("mapping: ") + mapping);
+            SDL_free(mapping);
+
+            return;
+        }
+    }
+}
 
 
 void Command::SaveSettings(const string &path)

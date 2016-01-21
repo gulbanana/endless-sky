@@ -157,6 +157,9 @@ int main(int argc, char *argv[])
 
 		SDL_GL_SetSwapInterval(1);
 
+		// Load special input methods.
+		Command::LoadGameControllers();
+
 		// Initialize GLEW.
 #ifndef __APPLE__
 		glewExperimental = GL_TRUE;

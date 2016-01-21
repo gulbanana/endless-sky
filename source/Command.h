@@ -48,26 +48,27 @@ public:
 	static const Command GATHER;
 	static const Command HOLD;
 	static const Command WAIT;
-	
+
 public:
 	Command() = default;
 	// Assume SDL_Keycode is a signed int, so I don't need to include SDL.h.
 	explicit Command(int keycode);
-	
+
 	// Read the current keyboard state.
 	void ReadKeyboard();
-	
+
 	// Load or save the keyboard preferences.
 	static void LoadSettings(const std::string &path);
 	static void SaveSettings(const std::string &path);
 	static void SetKey(Command command, int keycode);
-	
+	static void LoadGameControllers();
+
 	// Get the description or keycode name for this command. If this command is
 	// a combination of more than one command, an empty string is returned.
 	const std::string &Description() const;
 	const std::string &KeyName() const;
 	bool HasConflict() const;
-	
+
 	// Clear all commands (i.e. set to the default state).
 	void Clear();
 	// Clear, set, or check the given bits. This ignores the turn field.
@@ -76,30 +77,30 @@ public:
 	bool Has(Command command) const;
 	// Get the commands that are set in this and not in the given command.
 	Command AndNot(Command command) const;
-	
+
 	// Get or set the turn amount.
 	void SetTurn(double amount);
 	double Turn() const;
 	// Get or set the fire commands.
 	bool HasFire(int index);
 	void SetFire(int index);
-	
+
 	// Check if any bits are set in this command (including a nonzero turn).
 	explicit operator bool() const;
 	bool operator!() const;
 	// For sorting commands:
 	bool operator<(const Command &command) const;
-	
+
 	// Get the commands that are set in either of these commands.
 	Command operator|(const Command &command) const;
 	Command &operator|=(const Command &command);
-	
-	
+
+
 private:
 	Command(uint64_t state);
 	Command(uint64_t state, const std::string &text);
-	
-	
+
+
 private:
 	uint64_t state = 0;
 	double turn = 0.;
