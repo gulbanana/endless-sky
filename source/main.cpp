@@ -76,33 +76,33 @@ int main(int argc, char *argv[])
 			debugMode = true;
 	}
 	PlayerInfo player;
-	
+
 	try {
-		SDL_Init(SDL_INIT_VIDEO);
-		
+		SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER);
+
 		// Begin loading the game data.
 		GameData::BeginLoad(argv);
 		Audio::Init(GameData::Sources());
-		
+
 		// On Windows, make sure that the sleep timer has at least 1 ms resolution
 		// to avoid irregular frame rates.
 #ifdef _WIN32
 		timeBeginPeriod(1);
 #endif
-		
+
 		player.LoadRecent();
 		player.ApplyChanges();
-		
+
 		// Check how big the window can be.
 		SDL_DisplayMode mode;
 		if(SDL_GetCurrentDisplayMode(0, &mode))
 			return DoError("Unable to query monitor resolution!");
-		
+
 		Preferences::Load();
 		Uint32 flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
 		if(Preferences::Has("fullscreen"))
 			flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-		
+
 		// Make the window just slightly smaller than the monitor resolution.
 		int maxWidth = mode.w;
 		int maxHeight = mode.h;
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 		int restoreHeight = 0;
 		if(maxWidth < 640 || maxHeight < 480)
 			return DoError("Monitor resolution is too small!");
-		
+
 		if(Screen::RawWidth() && Screen::RawHeight())
 		{
 			// Never allow the saved screen width to be leaving less than 100
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 		// Make sure the zoom factor is not set too high for the full UI to fit.
 		if(Screen::Height() < 700)
 			Screen::SetZoom(100);
-		
+
 		// Create the window.
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 #ifdef _WIN32
@@ -141,34 +141,34 @@ int main(int argc, char *argv[])
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #endif
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-		
+
 		SDL_Window *window = SDL_CreateWindow("Endless Sky",
 			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 			Screen::RawWidth(), Screen::RawHeight(), flags);
 		if(!window)
 			return DoError("Unable to create window!");
-		
+
 		SDL_GLContext context = SDL_GL_CreateContext(window);
 		if(!context)
 			return DoError("Unable to create OpenGL context! Check if your system supports OpenGL 3.0.", window);
-		
+
 		if(SDL_GL_MakeCurrent(window, context))
 			return DoError("Unable to set the current OpenGL context!", window, context);
-		
+
 		SDL_GL_SetSwapInterval(1);
-		
+
 		// Initialize GLEW.
 #ifndef __APPLE__
 		glewExperimental = GL_TRUE;
 		if(glewInit() != GLEW_OK)
 			return DoError("Unable to initialize GLEW!", window, context);
 #endif
-		
+
 		// Check that the OpenGL version is high enough.
 		const char *glVersion = reinterpret_cast<const char *>(glGetString(GL_VERSION));
 		if(!glVersion || !*glVersion)
 			return DoError("Unable to query the OpenGL version!", window, context);
-		
+
 		const char *glslVersion = reinterpret_cast<const char *>(glGetString(GL_SHADING_LANGUAGE_VERSION));
 		if(!glslVersion || !*glslVersion)
 		{
@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
 			out << "Unable to query the GLSL version. OpenGL version is " << glVersion << ".";
 			return DoError(out.str(), window, context);
 		}
-		
+
 		if(*glVersion < '3')
 		{
 			ostringstream out;
@@ -185,12 +185,12 @@ int main(int argc, char *argv[])
 			out << "Please update your graphics drivers.";
 			return DoError(out.str(), window, context);
 		}
-		
+
 		glClearColor(0.f, 0.f, 0.0f, 1.f);
 		glEnable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
 		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-		
+
 		{
 			// Check whether this is a high-DPI window.
 			int width = 0;
@@ -198,16 +198,16 @@ int main(int argc, char *argv[])
 			SDL_GL_GetDrawableSize(window, &width, &height);
 			Screen::SetHighDPI(width > Screen::RawWidth() && height > Screen::RawHeight());
 		}
-		
+
 		GameData::LoadShaders();
-		
-		
+
+
 		UI gamePanels;
 		UI menuPanels;
 		menuPanels.Push(new MenuPanel(player, gamePanels));
 		if(!conversation.IsEmpty())
 			menuPanels.Push(new ConversationPanel(player, conversation));
-		
+
 		string swizzleName = "_texture_swizzle";
 #ifndef __APPLE__
 		const char *extensions = reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS));
@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
 				"which Endless Sky uses to draw ships in different colors depending on which "
 				"government they belong to. So, all human ships will be the same color, which "
 				"may be confusing. Consider upgrading your graphics driver (or your OS)."));
-		
+
 		FrameTimer timer(60);
 		bool isPaused = false;
 		while(!menuPanels.IsDone())
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
 			while(SDL_PollEvent(&event))
 			{
 				UI &activeUI = (menuPanels.IsEmpty() ? gamePanels : menuPanels);
-				
+
 				// The caps lock key slows the game down (to make it easier to
 				// see and debug things that are happening quickly).
 				if(debugMode && (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP)
@@ -303,22 +303,22 @@ int main(int argc, char *argv[])
 				}
 			}
 			Font::ShowUnderlines(SDL_GetModState() & KMOD_ALT);
-			
+
 			// Tell all the panels to step forward, then draw them.
 			((!isPaused && menuPanels.IsEmpty()) ? gamePanels : menuPanels).StepAll();
 			Audio::Step();
 			// That may have cleared out the menu, in which case we should draw
 			// the game panels instead:
 			(menuPanels.IsEmpty() ? gamePanels : menuPanels).DrawAll();
-			
+
 			SDL_GL_SwapWindow(window);
 			timer.Wait();
 		}
-		
+
 		// If you quit while landed on a planet, save the game.
 		if(player.GetPlanet())
 			player.Save();
-		
+
 		// The Preferences class reads the screen dimensions, so update them if
 		// the window is full screen:
 		bool isFullscreen = (restoreWidth != 0);
@@ -326,14 +326,14 @@ int main(int argc, char *argv[])
 		if(isFullscreen)
 			Screen::SetRaw(restoreWidth, restoreHeight);
 		Preferences::Save();
-		
+
 		Cleanup(window, context);
 	}
 	catch(const runtime_error &error)
 	{
 		DoError(error.what());
 	}
-	
+
 	return 0;
 }
 
@@ -374,7 +374,7 @@ void PrintVersion()
 int DoError(string message, SDL_Window *window, SDL_GLContext context)
 {
 	Cleanup(window, context);
-	
+
 	// Check if SDL has more details.
 	const char *sdlMessage = SDL_GetError();
 	if(sdlMessage && sdlMessage[0])
@@ -383,10 +383,10 @@ int DoError(string message, SDL_Window *window, SDL_GLContext context)
 		message += sdlMessage;
 		message += "\")";
 	}
-	
+
 	// Print the error message in the terminal.
 	cerr << message << endl;
-	
+
 	// Show the error message both in a message box and in the terminal.
 	SDL_MessageBoxData box;
 	box.flags = SDL_MESSAGEBOX_ERROR;
@@ -394,17 +394,17 @@ int DoError(string message, SDL_Window *window, SDL_GLContext context)
 	box.title = "Endless Sky: Error";
 	box.message = message.c_str();
 	box.colorScheme = nullptr;
-	
+
 	SDL_MessageBoxButtonData button;
 	button.flags = SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT;
 	button.buttonid = 0;
 	button.text = "OK";
 	box.numbuttons = 1;
 	box.buttons = &button;
-	
+
 	int result = 0;
 	SDL_ShowMessageBox(&box, &result);
-	
+
 	return 1;
 }
 
@@ -436,7 +436,7 @@ Conversation LoadConversation()
 			conversation.Load(node);
 			break;
 		}
-	
+
 	const map<string, string> subs = {
 		{"<bunks>", "[N]"},
 		{"<cargo>", "[N tons of Commodity]"},

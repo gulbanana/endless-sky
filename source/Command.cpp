@@ -15,6 +15,7 @@ PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 #include "DataFile.h"
 #include "DataNode.h"
 #include "DataWriter.h"
+#include "Files.h"
 
 #include <SDL2/SDL.h>
 
@@ -75,7 +76,7 @@ void Command::ReadKeyboard()
 {
 	Clear();
 	const Uint8 *keyDown = SDL_GetKeyboardState(nullptr);
-	
+
 	// Each command can only have one keycode, but misconfigured settings can
 	// temporarily cause one keycode to be used for two commands.
 	for(const auto &it : keycodeForCommand)
@@ -89,11 +90,11 @@ void Command::ReadKeyboard()
 void Command::LoadSettings(const string &path)
 {
 	DataFile file(path);
-	
+
 	map<string, Command> commands;
 	for(const auto &it : description)
 		commands[it.second] = it.first;
-	
+
 	// Each command can only have one keycode, but misconfigured settings can
 	// temporarily cause one keycode to be used for two commands.
 	for(const DataNode &node : file)
@@ -107,7 +108,7 @@ void Command::LoadSettings(const string &path)
 			keyName[command] = SDL_GetKeyName(keycode);
 		}
 	}
-	
+
 	commandForKeycode.clear();
 	keycodeCount.clear();
 	for(const auto &it : keycodeForCommand)
@@ -115,6 +116,12 @@ void Command::LoadSettings(const string &path)
 		commandForKeycode[it.second] = it.first;
 		++keycodeCount[it.second];
 	}
+
+    const auto hasController = SDL_NumJoysticks() > 0 && SDL_IsGameController(0);
+    if (hasController)
+        Files::LogError("yes controller");
+    else
+        Files::LogError("no controller");
 }
 
 
@@ -122,7 +129,7 @@ void Command::LoadSettings(const string &path)
 void Command::SaveSettings(const string &path)
 {
 	DataWriter out(path);
-	
+
 	for(const auto &it : commandForKeycode)
 	{
 		auto dit = description.find(it.second);
@@ -139,10 +146,10 @@ void Command::SetKey(Command command, int keycode)
 	// are mapped to the same key and you change one of them, the other stays mapped.
 	keycodeForCommand[command] = keycode;
 	keyName[command] = SDL_GetKeyName(keycode);
-	
+
 	commandForKeycode.clear();
 	keycodeCount.clear();
-	
+
 	for(const auto &it : keycodeForCommand)
 	{
 		commandForKeycode[it.second] = it.first;
@@ -177,7 +184,7 @@ bool Command::HasConflict() const
 	auto it = keycodeForCommand.find(*this);
 	if(it == keycodeForCommand.end())
 		return false;
-	
+
 	auto cit = keycodeCount.find(it->second);
 	return (cit != keycodeCount.end() && cit->second > 1);
 }
