@@ -119,9 +119,17 @@ void Command::LoadSettings(const string &path)
 
     const auto hasController = SDL_NumJoysticks() > 0 && SDL_IsGameController(0);
     if (hasController)
+    {
         Files::LogError("yes controller");
+
+        auto controller = SDL_GameControllerOpen(0);
+        auto mapping = SDL_GameControllerMapping(controller);
+        Files::LogError(mapping);
+    }
     else
+    {
         Files::LogError("no controller");
+    }
 }
 
 
