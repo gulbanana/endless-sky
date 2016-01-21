@@ -1747,6 +1747,11 @@ void AI::MovePlayer(Ship &ship, const PlayerInfo &player, const list<shared_ptr<
 			else
 				command.SetTurn(TurnBackward(ship));
 		}
+		else if(keyHeld.Has(Command::AIM))
+		{
+			Point direction(keyHeld.Axis(SDL_CONTROLLER_AXIS_LEFTX), keyHeld.Axis(SDL_CONTROLLER_AXIS_LEFTY));
+			command.SetTurn(TurnToward(ship, direction.Unit()));
+		}
 
 		if(keyHeld.Has(Command::FORWARD))
 			command |= Command::FORWARD;

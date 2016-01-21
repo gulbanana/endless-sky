@@ -61,6 +61,7 @@ const Command Command::FIGHT(1uL << 21, "Fleet: Fight my target");
 const Command Command::GATHER(1uL << 22, "Fleet: Gather around me");
 const Command Command::HOLD(1uL << 23, "Fleet: Hold position");
 const Command Command::WAIT(1uL << 24, "");
+const Command Command::AIM(1uL << 25, "");
 
 
 
@@ -89,7 +90,7 @@ void Command::ReadKeyboard()
 
 
 // Read gamepad buttons and directional analog input.
-bool Command::ReadController()
+void Command::ReadController()
 {
 	if (attachedController != nullptr)
 	{
@@ -100,11 +101,10 @@ bool Command::ReadController()
 		xAxis = SDL_GameControllerGetAxis(attachedController, SDL_CONTROLLER_AXIS_LEFTX);
 		yAxis = SDL_GameControllerGetAxis(attachedController, SDL_CONTROLLER_AXIS_LEFTY);
 
-		return true;
-	}
-	else
-	{
-		return false;
+		if (abs(xAxis) > CONTROLLER_DEAD_ZONE || abs(yAxis) > CONTROLLER_DEAD_ZONE)
+		{
+			*this |= Command::AIM;
+		}
 	}
 }
 

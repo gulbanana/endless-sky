@@ -48,6 +48,9 @@ public:
 	static const Command GATHER;
 	static const Command HOLD;
 	static const Command WAIT;
+	static const Command AIM;
+
+	static const short CONTROLLER_DEAD_ZONE = 8000;
 
 public:
 	Command() = default;
@@ -57,8 +60,8 @@ public:
 	// Read the current keyboard state.
 	void ReadKeyboard();
 
-	// Read controller state and return whether axes were updated.
-	bool ReadController();
+	// Read controller state.
+	void ReadController();
 
 	// Load or save the keyboard preferences.
 	static void LoadSettings(const std::string &path);
